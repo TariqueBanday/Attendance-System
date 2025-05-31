@@ -1,40 +1,128 @@
-<!-- Simple HTML Interface -->
-<div class="attendance-app">
-  <h2>Class Attendance</h2>
-  <input type="date" id="attendanceDate">
-  <div class="student-list">
-    <!-- Generated dynamically -->
-  </div>
-  <button onclick="submitAttendance()">Submit</button>
-</div>
-
-<script>
-// Sample JavaScript
-const students = Array.from({length: 35}, (_,i) => i+1);
-
-function renderStudentList() {
-  const container = document.querySelector('.student-list');
-  container.innerHTML = students.map(roll => `
-    <div class="student-item">
-      <input type="checkbox" id="roll-${roll}" value="${roll}">
-      <label for="roll-${roll}">Roll ${roll}</label>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Attendance System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .date-picker {
+            margin: 20px 0;
+        }
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .student-item {
+            display: flex;
+            align-items: center;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4285F4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #3367D6;
+        }
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Class Attendance System</h1>
+    
+    <div class="date-picker">
+        <label for="attendanceDate">Select Date: </label>
+        <input type="date" id="attendanceDate">
     </div>
-  `).join('');
-}
-
-async function submitAttendance() {
-  const date = document.getElementById('attendanceDate').value;
-  const present = [...document.querySelectorAll('input[type="checkbox"]:checked')]
-                 .map(el => el.value);
-  
-  // Send to server or Google Sheets
-  const response = await fetch('https://script.google.com/macros/s/AKfycbywVzbEKd2AlzAUQl8WpTUwmSdouF59QYHSDUZN05XkwlDtfw7CCJ77yMAIh3PPPcWrFA/exec', {
-    method: 'POST',
-    body: JSON.stringify({date, present})
-  });
-  
-  alert('Attendance recorded!');
-}
-
-renderStudentList();
-</script>
+    
+    <h3>Mark Present Students (Roll Numbers 1-35):</h3>
+    <div class="student-grid" id="studentList"></div>
+    
+    <button onclick="submitAttendance()">Submit Attendance</button>
+    
+    <div class="summary" id="summary">
+        <h3>Last Submission:</h3>
+        <p id="lastSubmission">No data submitted yet</p>
+    </div>
+    
+    <script>
+        // Backend URL - Replace with your Google Apps Script URL
+        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbywVzbEKd2AlzAUQl8WpTUwmSdouF59QYHSDUZN05XkwlDtfw7CCJ77yMAIh3PPPcWrFA/exec';
+        
+        // Initialize student checkboxes
+        function initStudentList() {
+            const studentList = document.getElementById('studentList');
+            
+            for (let i = 1; i <= 35; i++) {
+                const studentItem = document.createElement('div');
+                studentItem.className = 'student-item';
+                studentItem.innerHTML = `
+                    <input type="checkbox" id="roll-${i}" value="${i}">
+                    <label for="roll-${i}">${i}</label>
+                `;
+                studentList.appendChild(studentItem);
+            }
+            
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('attendanceDate').value = today;
+        }
+        
+        // Submit attendance to backend
+        async function submitAttendance() {
+            const date = document.getElementById('attendanceDate').value;
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            const presentRolls = Array.from(checkboxes).map(checkbox => checkbox.value);
+            
+            if (!date) {
+                alert("Please select a date!");
+                return;
+            }
+            
+            try {
+                const response = await fetch(https://script.google.com/macros/s/AKfycbywVzbEKd2AlzAUQl8WpTUwmSdouF59QYHSDUZN05XkwlDtfw7CCJ77yMAIh3PPPcWrFA/exec, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date, presentRolls })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    document.getElementById('lastSubmission').innerHTML = `
+                        <strong>Date:</strong> ${date}<br>
+                        <strong>Present:</strong> ${result.presentCount} students<br>
+                        <strong>Absent:</strong> ${result.absentCount} students<br>
+                        <strong>Status:</strong> ${result.message}
+                    `;
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                alert("Error: " + error.message);
+                console.error("Submission error:", error);
+            }
+        }
+        
+        // Initialize the page
+        window.onload = initStudentList;
+    </script>
+</body>
+</html>
