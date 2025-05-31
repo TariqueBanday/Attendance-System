@@ -1,83 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Class Attendance System</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .student-list {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            margin: 20px 0;
-        }
-        .student-item {
-            display: flex;
-            align-items: center;
-        }
-        button {
-            padding: 10px 20px;
-            background: #4285F4;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #3367D6;
-        }
-    </style>
-</head>
-<body>
-    <h1>Class Attendance</h1>
-    <input type="date" id="attendanceDate">
+async function submitAttendance() {
+  const date = document.getElementById('attendanceDate').value;
+  const presentRolls = Array.from(
+    document.querySelectorAll('input[type="checkbox"]:checked')
+  ).map(cb => cb.value);
+
+  if (!date) {
+    alert("Please select a date!");
+    return;
+  }
+
+  try {
+    const response = await fetch('https://script.google.com/macros/s/AKfycbzE2DYY5ewCPa5Ac9kvc1wsu8owBw8ntgUb9xxv6uFI0kYkzgSoFyunCDAwQk62wAGCrg/exec', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, presentRolls })
+    });
     
-    <h3>Select Present Students (Roll Numbers):</h3>
-    <div class="student-list" id="studentList"></div>
-    
-    <button onclick="submitAttendance()">Submit Attendance</button>
-    
-    <script>
-        // Generate checkboxes for all 35 students
-        const studentList = document.getElementById('studentList');
-        
-        for (let i = 1; i <= 35; i++) {
-            const studentItem = document.createElement('div');
-            studentItem.className = 'student-item';
-            studentItem.innerHTML = `
-                <input type="checkbox" id="roll-${i}" value="${i}">
-                <label for="roll-${i}">${i}</label>
-            `;
-            studentList.appendChild(studentItem);
-        }
-        
-        // Submit attendance to Google Sheets
-        async function submitAttendance() {
-            const date = document.getElementById('attendanceDate').value;
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
-            const presentRolls = Array.from(checkboxes).map(checkbox => checkbox.value);
-            
-            if (!date) {
-                alert("Please select a date!");
-                return;
-            }
-            
-            // Send data to Google Apps Script (next step)
-            const response = await fetch('https://script.google.com/macros/s/AKfycbwh0ERqNxd5Loh2i95vixmTyx2Y_KHHYkaC60wt2zIBlTmuw5FpEyN2wAk5yzcf__dzxQ/exec', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date, presentRolls })
-            });
-            
-            const result = await response.json();
-            alert(result.message);
-        }
-    </script>
-</body>
-</html>
+    const result = await response.json();
+    alert(result.message);
+  } catch (error) {
+    alert("Error: " + error.message);
+    console.error(error);
+  }
+}
